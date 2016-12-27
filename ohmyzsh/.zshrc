@@ -124,6 +124,8 @@ alias zshreload="source ~/.zshrc"
 alias jsnippets="subl ~/.atom/packages/javascript-snippets/README.md"
 alias npmlist="npm list --depth=0"
 
+# Launches Python SimpleHTTPServer at defined port else
+# defaults to 8081
 function pyserver() {
 	if [ -z "$1" ]; then
 		python -m SimpleHTTPServer 8081 & chrome "http://localhost:8081"
@@ -132,6 +134,8 @@ function pyserver() {
 	fi
 }
 
+# Launches Node http-server at defined port else
+# defaults to 8080
 function hserver() {
 	if [ -z "$1" ]; then
 		http-server -p 8080 & chrome "http://localhost:8080"
@@ -140,6 +144,7 @@ function hserver() {
 	fi
 }
 
+# returns system private ip
 function myip() {
     ifconfig lo0 | grep 'inet ' | sed -e 's/:/ /' | awk '{print "lo0       : " $2}'
 	ifconfig en0 | grep 'inet ' | sed -e 's/:/ /' | awk '{print "en0 (IPv4): " $2 " " $3 " " $4 " " $5 " " $6}'
@@ -148,6 +153,7 @@ function myip() {
 	ifconfig en1 | grep 'inet6 ' | sed -e 's/ / /' | awk '{print "en1 (IPv6): " $2 " " $3 " " $4 " " $5 " " $6}'
 }
 
+# create git repo from terminal 
 function startgit() {
 	repo=$1
 	if [ -z "$1" ]; then
@@ -178,4 +184,28 @@ function port() {
 
 function newdir () {
 	mkdir $1 && cd $1
+}
+
+# Compatible in all bash versions
+# Automatically switches between work and personal git profiles
+# You have to setup your SSH keys for each profile
+# Compatible in all bash versions
+# Developed using http://mherman.org/blog/2013/09/16/managing-multiple-github-accounts/
+function gcn() {
+	hosts=( "vcm.wal-mart.com:workBitBucket"
+        "gecgithub01.walmart.com:workGitHub"
+        "walmart.visualstudio.com:workVisualStudio"
+        "github.com:personalGithub")
+	ssh_url=$1
+	for host in "${hosts[@]}" ; do
+		KEY=${host%%:*}
+   		VALUE=${host#*:}
+   		if (test "${ssh_url#*$KEY}" != "$ssh_url") 
+   		then
+   			echo "Cloning with $VALUE profile..." 
+   			git clone "${ssh_url/$KEY/$VALUE}"
+   			cd ${${ssh_url#*/*}%%.git*}
+   			break
+		fi
+	done
 }
