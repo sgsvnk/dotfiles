@@ -49,7 +49,7 @@ ENABLE_CORRECTION="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git history history-substring-search terminalapp brew)
+plugins=(git osx history history-substring-search terminalapp brew npm bower extract)
 
 # User configuration
 
@@ -85,6 +85,9 @@ source $ZSH/oh-my-zsh.sh
 
 # personal alias
 alias home="cd ~"
+alias d="cd ~/Downloads"
+alias dc="cd ~/Documents"
+alias ds="cd ~/Desktop"
 alias gc="git checkout"
 alias gnb="git checkout -b"
 alias gcm="git commit -m"
@@ -93,7 +96,7 @@ alias gb="git branch -a"
 alias gpl="git pull origin"
 alias gp="git pull origin"
 alias gps="git push origin"
-alias gcb="echo $(current_branch)"
+alias gcb="echo $(current_branch)" 
 alias gm="git merge"
 alias gs="git status"
 alias gr="git reset"
@@ -107,17 +110,20 @@ alias showhidden="defaults write com.apple.finder AppleShowAllFiles TRUE && kill
 alias hidehidden="defaults write com.apple.finder AppleShowAllFiles FALSE && killall Finder"
 alias chrome="/usr/bin/open -a \"/Applications/Google Chrome.app\""
 alias firefox="/usr/bin/open -a \"/Applications/Firefox.app\""
-alias ports="sudo lsof -i -P | grep -i 'listen'"
-alias ai="apm install"
-
 alias gemail="git config user.email"
 alias gname="git config user.name"
+alias ports="lsof -i -P | grep -i 'listen'"
+alias ai="apm install"
+alias ni="npm install"
+alias nis="npm install --save"
+alias nu="npm uninstall"
+alias nus="npm uninstall --save"
 
 alias zshconfig="subl ~/.zshrc"
 alias zshreload="source ~/.zshrc"
+alias jsnippets="subl ~/.atom/packages/javascript-snippets/README.md"
+alias npmlist="npm list --depth=0"
 
-# Launches Python SimpleHTTPServer at defined port else
-# defaults to 8081
 function pyserver() {
 	if [ -z "$1" ]; then
 		python -m SimpleHTTPServer 8081 & chrome "http://localhost:8081"
@@ -126,8 +132,6 @@ function pyserver() {
 	fi
 }
 
-# Launches Node http-server at defined port else
-# defaults to 8080
 function hserver() {
 	if [ -z "$1" ]; then
 		http-server -p 8080 & chrome "http://localhost:8080"
@@ -136,7 +140,6 @@ function hserver() {
 	fi
 }
 
-# returns system private ip
 function myip() {
     ifconfig lo0 | grep 'inet ' | sed -e 's/:/ /' | awk '{print "lo0       : " $2}'
 	ifconfig en0 | grep 'inet ' | sed -e 's/:/ /' | awk '{print "en0 (IPv4): " $2 " " $3 " " $4 " " $5 " " $6}'
@@ -145,71 +148,34 @@ function myip() {
 	ifconfig en1 | grep 'inet6 ' | sed -e 's/ / /' | awk '{print "en1 (IPv6): " $2 " " $3 " " $4 " " $5 " " $6}'
 }
 
-function webapp() {
-	mkdir -p $1
-	cd $1
-	mkdir -p {styles,scripts}
-	touch styles/styles.css
-	touch scripts/app.js
-	echo \
-'<!DOCTYPE html>
-	<html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<title></title>
-		<link rel="stylesheet" href="/styles/styles.css">
-	</head>
-	<body>
-		<script src="/scripts/app.js"></script>
-	</body>
-</html>' >> index.html
-}
-
-function nodeapp() {
-	mkdir -p $1
-	cd $1
-	touch app.js
-	npm init -y
-}
-
-# creates a git repo with the name mentioned in arg1
-# Replace my handle with yours
 function startgit() {
-	curl -u 'sgsvenkatesh' https://api.github.com/user/repos -d '{"name": "'$1'"}'
-	echo '# '$1'' >> README.md
+	repo=$1
+	if [ -z "$1" ]; then
+		repo=${PWD##*/}
+		echo "Repo name ${repo}"
+	fi
+	curl -u 'sgsvenkatesh' https://api.github.com/user/repos -d '{"name": "'${repo}'"}'
+	echo '# '${repo}'' >> README.md
 	git init
+	gemail venki.iitbbs@gmail.com
 	ga
 	gcm "First Commit"
-	git remote add origin git@github.com:sgsvenkatesh/$1.git
+	git remote add origin git@personalGithub:sgsvenkatesh/${repo}.git
 	git push --set-upstream origin master
 }
 
-# git add && git commit -m "Message" && git push origin
+# git add && git commit -m "Message" && git push origin 
 # assuming upstream is set
 function gacp() {
-	ga
+	ga 
 	gcm "$1"
 	gps
 }
 
-# Compatible in all bash versions
-# Automatically switches between work and personal
-# git profiles
-# You have to setup your SSH keys for each profile
-function gcn() {
-	hosts=( "work.bitbucket.com:workBitBucket"
-        "work.github.com:workGitHub"
-        "github.com:personalGithub" )
-	ssh_url=$1
-	for host in "${hosts[@]}" ; do
-		KEY=${host%%:*}
-   		VALUE=${host#*:}
-   		if (test "${ssh_url#*$KEY}" != "$ssh_url")
-   		then
-   			echo "Cloning with $VALUE profile..."
-   			git clone "${ssh_url/$KEY/$VALUE}"
-   			cd ${${ssh_url#*/*}%%.git*}
-   			break
-		fi
-	done
+function port() {
+	lsof -n -i4TCP:$1 | grep LISTEN
+}
+
+function newdir () {
+	mkdir $1 && cd $1
 }
