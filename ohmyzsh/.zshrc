@@ -96,7 +96,7 @@ alias gb="git branch -a"
 alias gpl="git pull origin"
 alias gp="git pull origin"
 alias gps="git push origin"
-alias gcb="echo $(current_branch)" 
+alias gcb="echo $(current_branch)"
 alias gm="git merge"
 alias gs="git status"
 alias gr="git reset"
@@ -115,9 +115,17 @@ alias gname="git config user.name"
 alias ports="lsof -i -P | grep -i 'listen'"
 alias ai="apm install"
 alias ni="npm install"
+alias nig="npm install -g"
 alias nis="npm install --save"
+alias nisd="npm install --save-dev"
 alias nu="npm uninstall"
+alias nug="npm uninstall -g"
 alias nus="npm uninstall --save"
+alias nusd="npm uninstall --save-dev"
+alias gclean="gulp clean"
+alias gbuild="gulp build"
+alias greb="gclean && gbuild"
+alias rmds="sudo find . -name ".DS_Store" -depth -exec rm {} \;"
 
 alias zshconfig="subl ~/.zshrc"
 alias zshreload="source ~/.zshrc"
@@ -153,7 +161,7 @@ function myip() {
 	ifconfig en1 | grep 'inet6 ' | sed -e 's/ / /' | awk '{print "en1 (IPv6): " $2 " " $3 " " $4 " " $5 " " $6}'
 }
 
-# create git repo from terminal 
+# create git repo from terminal
 function startgit() {
 	repo=$1
 	if [ -z "$1" ]; then
@@ -170,11 +178,16 @@ function startgit() {
 	git push --set-upstream origin master
 }
 
-# git add && git commit -m "Message" && git push origin 
+# git add && git commit -m "Message" && git push origin
 # assuming upstream is set
 function gacp() {
-	ga 
-	gcm "$1"
+	ga
+	if [ -z "$2" ]; then
+		gcm "$1"
+	else
+		echo "Commiting with message and description"
+		gcm "$1" -m "$2"
+	fi
 	gps
 }
 
@@ -186,23 +199,31 @@ function newdir () {
 	mkdir $1 && cd $1
 }
 
+function gpls() {
+	gpl $1 && gps
+}
+
+function linelog() {
+	git log --pretty=short -u -L $1,$2:$3
+}
+
 # Compatible in all bash versions
 # Automatically switches between work and personal git profiles
 # You have to setup your SSH keys for each profile
 # Compatible in all bash versions
 # Developed using http://mherman.org/blog/2013/09/16/managing-multiple-github-accounts/
 function gcn() {
-	hosts=( "vcm.wal-mart.com:workBitBucket"
-        "gecgithub01.walmart.com:workGitHub"
-        "walmart.visualstudio.com:workVisualStudio"
+	hosts=( "url1:workBitBucket"
+        "url2:workGitHub"
+        "url3:workVisualStudio"
         "github.com:personalGithub")
 	ssh_url=$1
 	for host in "${hosts[@]}" ; do
 		KEY=${host%%:*}
    		VALUE=${host#*:}
-   		if (test "${ssh_url#*$KEY}" != "$ssh_url") 
+   		if (test "${ssh_url#*$KEY}" != "$ssh_url")
    		then
-   			echo "Cloning with $VALUE profile..." 
+   			echo "Cloning with $VALUE profile..."
    			git clone "${ssh_url/$KEY/$VALUE}"
    			cd ${${ssh_url#*/*}%%.git*}
    			break
