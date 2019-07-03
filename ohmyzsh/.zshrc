@@ -49,7 +49,7 @@ ENABLE_CORRECTION="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git osx history history-substring-search terminalapp brew npm bower extract)
+plugins=(git osx history history-substring-search terminalapp brew npm bower extract tmux)
 
 # User configuration
 
@@ -91,6 +91,7 @@ alias ds="cd ~/Desktop"
 alias gc="git checkout"
 alias gnb="git checkout -b"
 alias gcm="git commit -m"
+alias gcma="git commit --amend -m"
 alias gf="git fetch"
 alias gb="git branch -a"
 alias gpl="git pull origin"
@@ -113,7 +114,6 @@ alias firefox="/usr/bin/open -a \"/Applications/Firefox.app\""
 alias gemail="git config user.email"
 alias gname="git config user.name"
 alias ports="lsof -i -P | grep -i 'listen'"
-alias ai="apm install"
 alias ni="npm install"
 alias nig="npm install -g"
 alias nis="npm install --save"
@@ -122,24 +122,54 @@ alias nu="npm uninstall"
 alias nug="npm uninstall -g"
 alias nus="npm uninstall --save"
 alias nusd="npm uninstall --save-dev"
-alias gclean="gulp clean"
-alias gbuild="gulp build"
-alias greb="gclean && gbuild"
 alias rmds="sudo find . -name ".DS_Store" -depth -exec rm {} \;"
+
+alias sshconfig="subl ~/.ssh/config"
+alias python="python3"
+alias py="python3"
+alias pip="pip3"
+alias pipupgrade="python3 -m pip install --upgrade pip"
 
 alias zshconfig="subl ~/.zshrc"
 alias zshreload="source ~/.zshrc"
-alias jsnippets="subl ~/.atom/packages/javascript-snippets/README.md"
+alias npmconfig="subl ~/.npmrc"
+alias gitconfig="subl ~/.gitconfig"
 alias npmlist="npm list --depth=0"
+
+alias alertme="afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/AnimationFlyToDownloads.aiff"
 
 # Launches Python SimpleHTTPServer at defined port else
 # defaults to 8081
 function pyserver() {
 	if [ -z "$1" ]; then
-		python -m SimpleHTTPServer 8081 & chrome "http://localhost:8081"
+		python -m http.server 8081 & chrome "http://localhost:8081"
 	else
-		python -m SimpleHTTPServer $1 & chrome "http://localhost:$1"
+		python -m http.server $1 & chrome "http://localhost:$1"
 	fi
+}
+
+function gcmt() {
+	if [ -z "$2" ]; then
+		git commit -m "$1"
+	else 
+		echo "Commiting with message and description"
+		git commit -m "$1" -m "$2"
+	fi
+}
+function gdb() {
+	git push origin --delete $1 && git branch -D $1
+}
+
+function ij() {
+	open -a /Applications/IntelliJ\ IDEA.app $1
+}
+
+function ws() {
+	open -a /Applications/WebStorm.app $1
+}
+
+function pycharm() {
+	open -a /Applications/PyCharm.app $1
 }
 
 # Launches Node http-server at defined port else
@@ -174,25 +204,30 @@ function startgit() {
 	gemail venki.iitbbs@gmail.com
 	ga
 	gcm "First Commit"
-	git remote add origin git@personalGithub:sgsvenkatesh/${repo}.git
+	git remote add origin git@github.com:sgsvenkatesh/${repo}.git
 	git push --set-upstream origin master
+}
+
+function gcn() {
+	ssh_url=$1
+	git clone $ssh_url
+	cd ${${ssh_url#*/*}%%.git*}
 }
 
 # git add && git commit -m "Message" && git push origin
 # assuming upstream is set
 function gacp() {
-	ga
-	if [ -z "$2" ]; then
-		gcm "$1"
-	else
-		echo "Commiting with message and description"
-		gcm "$1" -m "$2"
-	fi
+	ga 
+	gcmt "$1" "$2"
 	gps
 }
 
 function port() {
 	lsof -n -i4TCP:$1 | grep LISTEN
+}
+
+function killport() {
+	lsof -n -i:$1 | grep LISTEN | awk '{ print $2 }' | uniq | xargs kill -9
 }
 
 function newdir () {
@@ -207,26 +242,46 @@ function linelog() {
 	git log --pretty=short -u -L $1,$2:$3
 }
 
+function gpr() {
+	git pull-request -m $1 | pbcopy	
+}
+
+function gprb() {
+	git pull-request -b $1 -m $2 | pbcopy
+}
+
+function gpb() {
+	git fetch -p && for branch in `git branch -vv | grep ': gone]' | awk '{print $1}'`; do git branch -D $branch; done
+}
+
+function v() {
+	$1 --version;
+}
+
+function remove_all_node_modules() {
+	find . -name "node_modules" -exec rm -rf '{}' +
+}
+
 # Compatible in all bash versions
 # Automatically switches between work and personal git profiles
 # You have to setup your SSH keys for each profile
 # Compatible in all bash versions
 # Developed using http://mherman.org/blog/2013/09/16/managing-multiple-github-accounts/
-function gcn() {
-	hosts=( "url1:workBitBucket"
-        "url2:workGitHub"
-        "url3:workVisualStudio"
-        "github.com:personalGithub")
-	ssh_url=$1
-	for host in "${hosts[@]}" ; do
-		KEY=${host%%:*}
-   		VALUE=${host#*:}
-   		if (test "${ssh_url#*$KEY}" != "$ssh_url")
-   		then
-   			echo "Cloning with $VALUE profile..."
-   			git clone "${ssh_url/$KEY/$VALUE}"
-   			cd ${${ssh_url#*/*}%%.git*}
-   			break
-		fi
-	done
-}
+# function gcn() {
+# 	hosts=( "url1:workBitBucket"
+#         "url2:workGitHub"
+#         "url3:workVisualStudio"
+#         "github.com:personalGithub")
+# 	ssh_url=$1
+# 	for host in "${hosts[@]}" ; do
+# 		KEY=${host%%:*}
+#    		VALUE=${host#*:}
+#    		if (test "${ssh_url#*$KEY}" != "$ssh_url")
+#    		then
+#    			echo "Cloning with $VALUE profile..."
+#    			git clone "${ssh_url/$KEY/$VALUE}"
+#    			cd ${${ssh_url#*/*}%%.git*}
+#    			break
+# 		fi
+# 	done
+# }
