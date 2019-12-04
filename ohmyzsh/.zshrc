@@ -193,12 +193,31 @@ function myip() {
 
 # create git repo from terminal
 function startgit() {
-	repo=$1
-	if [ -z "$1" ]; then
+	private=false
+	while test $# -gt 0; do
+		case "$1" in
+			-p)
+				private=true
+				shift
+				;;
+			-n)
+				shift
+				repo=$1
+				shift
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+	if [ -z "${repo}" ]; then
 		repo=${PWD##*/}
-		echo "Repo name ${repo}"
+		echo "Repo name: ${repo}"
 	fi
-	curl -u 'sgsvenkatesh' https://api.github.com/user/repos -d '{"name": "'${repo}'"}'
+
+	echo '\n{"name": "'${repo}'", "private": '${private}'}\n'
+
+	curl -u 'sgsvenkatesh' https://api.github.com/user/repos -d '{"name": "'${repo}'", "private": '${private}'}'
 	echo '# '${repo}'' >> README.md
 	git init
 	gemail venki.iitbbs@gmail.com
@@ -206,6 +225,8 @@ function startgit() {
 	gcm "First Commit"
 	git remote add origin git@github.com:sgsvenkatesh/${repo}.git
 	git push --set-upstream origin master
+	repo=""
+	private=false
 }
 
 function gcn() {
